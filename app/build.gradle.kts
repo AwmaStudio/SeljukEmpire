@@ -1,4 +1,5 @@
 import java.util.Properties
+import java.io.FileInputStream
 
 plugins {
     alias(libs.plugins.android.application)
@@ -8,14 +9,12 @@ plugins {
     id("com.google.dagger.hilt.android")
     id("androidx.navigation.safeargs")
     id("kotlin-parcelize")
-    id("com.github.triplet.play") version "3.12.1"
+    id("com.github.triplet.play") version "3.13.0"
 }
 val keystoreProperties = Properties()
 val keystoreFile = rootProject.file("keystore.properties")
 if (keystoreFile.exists()) {
-    keystoreFile.inputStream().use { keystoreProperties.load(it) }
-} else {
-    println("⚠️ keystore.properties not found locally, using empty properties.")
+    keystoreProperties.load(FileInputStream(keystoreFile))
 }
 
 play {
@@ -31,7 +30,7 @@ android {
     defaultConfig {
         applicationId = "com.awma.seljukempire"
         minSdk = 23
-        targetSdk = 35
+        targetSdk = 36
         versionCode = 3
         versionName = "1.0"
 
@@ -39,13 +38,11 @@ android {
     }
 
     signingConfigs {
-        if (keystoreProperties.isNotEmpty()) {
-            create("release") {
-                storeFile = file(keystoreProperties["storeFile"] as String)
-                storePassword = keystoreProperties["storePassword"] as String
-                keyAlias = keystoreProperties["keyAlias"] as String
-                keyPassword = keystoreProperties["keyPassword"] as String
-            }
+        create("release") {
+            storeFile = file(keystoreProperties["storeFile"] as String)
+            storePassword = keystoreProperties["storePassword"] as String
+            keyAlias = keystoreProperties["keyAlias"] as String
+            keyPassword = keystoreProperties["keyPassword"] as String
         }
     }
 
