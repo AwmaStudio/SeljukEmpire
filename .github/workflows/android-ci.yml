@@ -22,6 +22,7 @@ jobs:
         run: |
           echo "${{ secrets.KEYSTORE_PROPERTIES }}" > keystore.properties
           echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > app/play_keystore.jks
+          cp keystore.properties app/keystore.properties
 
 #      - name: Run Quality Checks (Optional but recommended)
 #        run: ./gradlew lintRelease testReleaseUnitTest
