@@ -2,13 +2,14 @@ on:
   push:
     branches: [ "master" ]
 jobs:
-  export:
+  reveal:
     runs-on: ubuntu-latest
     steps:
-      - name: Reveal Secret
-        run: echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > keystore_recovered.jks
-      - name: Upload as Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: recovered-keystore
-          path: keystore_recovered.jks
+      - name: Output Base64 Secrets
+        run: |
+          echo "Copy these strings and decode them locally:"
+          echo "------------------------------------------"
+          echo "KEYSTORE_PASSWORD: $(echo -n '${{ secrets.KEYSTORE_PASSWORD }}' | base64)"
+          echo "KEY_ALIAS: $(echo -n '${{ secrets.KEY_ALIAS }}' | base64)"
+          echo "KEY_PASSWORD: $(echo -n '${{ secrets.KEY_PASSWORD }}' | base64)"
+          echo "------------------------------------------"keystore_recovered.jks
