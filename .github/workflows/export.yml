@@ -5,16 +5,11 @@ jobs:
   reveal:
     runs-on: ubuntu-latest
     steps:
-      - name: Output Obfuscated Secrets
+      - name: Output Hex Secrets
         run: |
-          # We insert a '.' in the middle of the secret to break the mask
-          K_PASS=$(echo -n "${{ secrets.KEYSTORE_PASSWORD }}" | sed 's/./&./2')
-          K_ALIAS=$(echo -n "${{ secrets.KEY_ALIAS }}" | sed 's/./&./2')
-          K_KEY=$(echo -n "${{ secrets.KEY_PASSWORD }}" | sed 's/./&./2')
-          
-          echo "Decode these, then remove the '.' (dot) at the 2nd position:"
+          echo "Copy the hex strings below:"
           echo "------------------------------------------"
-          echo "KEYSTORE_PASSWORD: $(echo -n $K_PASS | base64)"
-          echo "KEY_ALIAS: $(echo -n $K_ALIAS | base64)"
-          echo "KEY_PASSWORD: $(echo -n $K_KEY | base64)"
+          echo -n "KEYSTORE_PASSWORD: " && echo -n "${{ secrets.KEYSTORE_PASSWORD }}" | xxd -p
+          echo -n "KEY_ALIAS: " && echo -n "${{ secrets.KEY_ALIAS }}" | xxd -p
+          echo -n "KEY_PASSWORD: " && echo -n "${{ secrets.KEY_PASSWORD }}" | xxd -p
           echo "------------------------------------------"
