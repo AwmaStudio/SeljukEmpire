@@ -24,9 +24,8 @@ jobs:
       - name: Build Release Bundle (AAB)
         run: ./gradlew bundleRelease
         env:
-          # These match the System.getenv() calls in your build.gradle.kts
-          STORE_FILE: keystore.jks
-          STORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEYSTORE_BASE64: keystore.jks
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
 

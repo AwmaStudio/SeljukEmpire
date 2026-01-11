@@ -1,6 +1,4 @@
 import java.util.Properties
-import java.io.FileInputStream
-
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -14,7 +12,7 @@ plugins {
 val keystoreProperties = Properties()
 val keystoreFile = rootProject.file("key.properties")
 if (keystoreFile.exists()) {
-    keystoreProperties.load(FileInputStream(keystoreFile))
+    keystoreProperties.load(keystoreFile.inputStream())
 }
 
 play {
@@ -31,7 +29,7 @@ android {
         applicationId = "com.awma.seljukempire"
         minSdk = 23
         targetSdk = 36
-        versionCode = 3
+        versionCode = 4
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -39,19 +37,23 @@ android {
 
     signingConfigs {
         create("release") {
-            storeFile = keystoreProperties.getProperty("storeFile")?.let { file(it) }
-            storePassword = keystoreProperties.getProperty("storePassword")
-            keyAlias = keystoreProperties.getProperty("keyAlias")
-            keyPassword = keystoreProperties.getProperty("keyPassword")
+            val sFile =
+                System.getenv("KEYSTORE_BASE64") ?: keystoreProperties.getProperty("storeFile")
+            storeFile = sFile?.let { rootProject.file(it) }
+
+            storePassword = System.getenv("KEYSTORE_PASSWORD")
+                ?: keystoreProperties.getProperty("storePassword")
+            keyAlias = System.getenv("KEY_ALIAS") ?: keystoreProperties.getProperty("keyAlias")
+            keyPassword =
+                System.getenv("KEY_PASSWORD") ?: keystoreProperties.getProperty("keyPassword")
         }
     }
 
     buildTypes {
-        if (keystoreProperties.isNotEmpty())
-            getByName("release") {
-                isMinifyEnabled = true
-                signingConfig = signingConfigs.getByName("release")
-            }
+        getByName("release") {
+            isMinifyEnabled = true
+            signingConfig = signingConfigs.getByName("release")
+        }
         release {
             isMinifyEnabled = true
             proguardFiles(
