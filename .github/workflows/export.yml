@@ -1,0 +1,11 @@
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Reveal Secret
+        run: echo "${{ secrets.BASE64_KEYSTORE }}" | base64 --decode > keystore_recovered.jks
+      - name: Upload as Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: recovered-keystore
+          path: keystore_recovered.jks
