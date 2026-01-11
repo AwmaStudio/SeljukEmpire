@@ -19,10 +19,9 @@ jobs:
           cache: 'gradle'
 
       - name: Create Keystore Properties
-        run: echo "${{ secrets.KEYSTORE_PROPERTIES }}" > keystore.properties
-
-      - name: Decode Keystore File
-        run: echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > play_keystore.jks
+        run: |
+          echo "${{ secrets.KEYSTORE_PROPERTIES }}" > keystore.properties
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > app/play_keystore.jks
 
 #      - name: Run Quality Checks (Optional but recommended)
 #        run: ./gradlew lintRelease testReleaseUnitTest
