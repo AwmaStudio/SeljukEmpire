@@ -12,7 +12,7 @@ plugins {
     id("com.github.triplet.play") version "3.13.0"
 }
 val keystoreProperties = Properties()
-val keystoreFile = rootProject.file("keystore.properties")
+val keystoreFile = rootProject.file("key.properties")
 if (keystoreFile.exists()) {
     keystoreProperties.load(FileInputStream(keystoreFile))
 }
