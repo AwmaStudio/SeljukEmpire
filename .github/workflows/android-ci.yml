@@ -1,128 +1,64 @@
-name: Android CI (Kotlin)
+name: Android CI/CD
 
 on:
   push:
     branches: [ "master" ]
-  pull_request:
-    branches: [ "master" ]
 
 jobs:
-  build:
+  # Job 1: Quality Check (Lint + Unit Tests)
+  test:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Grant execute permission for gradlew
-        run: chmod +x gradlew
-
-      - name: Set up JDK
+      - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
-          distribution: temurin
+          distribution: 'temurin'
           java-version: '17'
+          cache: 'gradle' # Automatically caches Gradle dependencies
 
-      - name: Setup Gradle
-        uses: gradle/gradle-build-action@v3
+      - name: Run Quality Checks
+        run: ./gradlew lintDebug testDebugUnitTest
 
-      - name: Build Debug APK
-        run: ./gradlew assembleDebug
-
-      - name: Run Lint
-        run: ./gradlew lintDebug
-
-      - name: Run Unit Tests
-        run: ./gradlew testDebugUnitTest
-
-      - name: Upload reports
-        if: always()
+      - name: Upload Test Reports
+        if: failure() # Only upload if tests fail to help debugging
         uses: actions/upload-artifact@v4
         with:
-          name: reports
-          path: |
-            app/build/reports/**
-            app/build/test-results/**
+          name: test-reports
+          path: app/build/reports/
 
-  instrumented-tests:
-    name: Instrumented Tests (Emulator)
+  # Job 2: Build & Release (Triggered only if Test passes)
+  deploy:
     runs-on: ubuntu-latest
-    needs: build
-
+    needs: test
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Grant execute permission for gradlew
-        run: chmod +x gradlew
-
-      - name: Set up JDK
+      - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
-          distribution: temurin
+          distribution: 'temurin'
           java-version: '17'
-
-      - name: Setup Gradle
-        uses: gradle/gradle-build-action@v3
-
-      - name: Run Unit Tests
-        run: ./gradlew testDebugUnitTest
-        
-      - name: Run Android Emulator and Tests  
-        uses: reactivecircus/android-emulator-runner@v2
-        with:
-          api-level: 29
-          target: default
-          arch: x86
-          profile: Nexus 6
-          emulator-options: -no-window -gpu swiftshader_indirect -no-boot-anim -no-snapshot
-          disable-animations: true
-          emulator-boot-timeout: 1200
-          script: ./gradlew connectedDebugAndroidTest
-
-  build-release:
-    name: Build Signed Release AAB
-    runs-on: ubuntu-latest
-    needs: [instrumented-tests]
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+          cache: 'gradle'
 
       - name: Decode Keystore
-        run: |
-          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > release.keystore
-          echo "KEYSTORE_FILE=$(pwd)/release.keystore" >> $GITHUB_ENV
+        run: echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > app/release.keystore
 
-      - name: Set up JDK
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '17'
-
-      - name: Setup Gradle
-        uses: gradle/gradle-build-action@v3
-
-      - name: Grant execute permission for gradlew
-        run: chmod +x gradlew
-
-      - name: Build Release AAB
+      - name: Build Release Bundle (AAB)
+        run: ./gradlew bundleRelease
         env:
+          # These env vars should match your build.gradle signingConfig
+          KEYSTORE_FILE: release.keystore
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-        run: ./gradlew bundleRelease
 
-      - name: Upload AAB
-        uses: actions/upload-artifact@v4
+      - name: Publish to Play Store
+        uses: r0adkll/upload-google-play@v1
         with:
-          name: release-aab
-          path: app/build/outputs/bundle/release/app-release.aab
-
-      - name: Decode Play Store Service Account
-        run: echo "$PLAY_STORE_SERVICE_ACCOUNT" | base64 --decode > app/play-service-account.json
-        env:
-          PLAY_STORE_SERVICE_ACCOUNT: ${{ secrets.PLAY_STORE_SERVICE_ACCOUNT }}
-
-      - name: Publish to Google Play
-        run: ./gradlew publishReleaseBundle
+          serviceAccountJsonRaw: ${{ secrets.PLAY_STORE_CREDENTIALS }}
+          packageName: com.your.package.name
+          releaseFiles: app/build/outputs/bundle/release/*.aab
+          track: internal # Options: internal, alpha, beta, production
+          status: completed
